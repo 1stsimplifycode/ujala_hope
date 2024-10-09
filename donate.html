@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate Some Food</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #form-container {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"], input[type="number"], input[type="file"] {
+            padding: 10px;
+            margin: 10px 0;
+            width: 80%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #flash-card {
+            margin-top: 20px;
+        }
+        .card {
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            width: 80%;
+            text-align: left;
+            position: relative;
+        }
+        .card img {
+            max-width: 100px;
+            height: auto;
+            border-radius: 5px;
+            margin-right: 15px;
+        }
+        .card-content {
+            display: flex;
+            align-items: center;
+        }
+        .card button {
+            background-color: #ffc107;
+            margin: 10px;
+        }
+        .card button.delete {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Donate Some Food</h1>
+    <button id="addItemBtn">Add Item</button>
+
+    <div id="form-container">
+        <form id="donationForm">
+            <label for="itemName">Item:</label><br>
+            <input type="text" id="itemName" name="itemName" required><br>
+            
+            <label for="quantity">Quantity:</label><br>
+            <button type="button" onclick="changeQuantity(-1)">-</button>
+            <input type="number" id="quantity" name="quantity" value="1" min="1" required>
+            <button type="button" onclick="changeQuantity(1)">+</button><br>
+            
+            <label for="imageUpload">Upload Image:</label><br>
+            <input type="file" id="imageUpload" name="imageUpload" accept="image/*" required><br>
+            
+            <label for="phoneNumber">Phone Number:</label><br>
+            <input type="text" id="phoneNumber" name="phoneNumber" pattern="\d{10}" maxlength="10" required><br>
+            
+            <label for="address">Address:</label><br>
+            <input type="text" id="address" name="address" required><br>
+            
+            <label for="city">City:</label><br>
+            <input type="text" id="city" name="city" required><br>
+            
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <div id="flash-card"></div>
+
+    <script>
+        let isEditMode = false;
+        let editingCard = null;
+        let uploadedImageURL = null;
+
+        document.getElementById('addItemBtn').addEventListener('click', function() {
+            document.getElementById('form-container').style.display = 'block';
+        });
+
+        // Handle file upload and generate an image preview URL
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                uploadedImageURL = URL.createObjectURL(file); // Store the uploaded image as a URL for preview
+            }
+        });
+
+        function changeQuantity(amount) {
+            var quantityInput = document.getElementById('quantity');
+            var currentValue = parseInt(quantityInput.value);
+            if (currentValue + amount >= 1) {
+                quantityInput.value = currentValue + amount;
+            }
+        }
+
+        document.getElementById('donationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const itemName = document.getElementById('itemName').value;
+            const quantity = document.getElementById('quantity').value;
+            const address = document.getElementById('address').value;
+            const city = document.getElementById('city').value;
+
+            if (isEditMode) {
+                // Update existing card if we are editing
+                editingCard.innerHTML = `
+                    <div class="card-content">
+                        <img src="${uploadedImageURL}" alt="Item Image">
+                        <div>
+                            <h3>${itemName}</h3>
+                            <p>Quantity: ${quantity}</p>
+                            <p>Location: ${address}, ${city}</p>
+                        </div>
+                    </div>
+                    <button class="edit">Edit</button>
+                    <button class="delete">Delete</button>
+                `;
+                attachCardButtons(editingCard);
+                isEditMode = false;
+                editingCard = null;
+            } else {
+                // Create a new card
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-content">
+                        <img src="${uploadedImageURL}" alt="Item Image">
+                        <div>
+                            <h3>${itemName}</h3>
+                            <p>Quantity: ${quantity}</p>
+                            <p>Location: ${address}, ${city}</p>
+                        </div>
+                    </div>
+                    <button class="edit">Edit</button>
+                    <button class="delete">Delete</button>
+                `;
+                document.getElementById('flash-card').appendChild(card);
+                attachCardButtons(card);
+            }
+
+            // Clear the form and hide it
+            document.getElementById('donationForm').reset();
+            document.getElementById('form-container').style.display = 'none';
+        });
+
+        function attachCardButtons(card) {
+            // Handle delete button
+            card.querySelector('.delete').addEventListener('click', function() {
+                card.remove();
+                document.getElementById('form-container').style.display = 'none';
+                document.getElementById('donationForm').reset();
+            });
+
+            // Handle edit button
+            card.querySelector('.edit').addEventListener('click', function() {
+                isEditMode = true;
+                editingCard = card;
+
+                // Pre-fill the form with the card's data
+                document.getElementById('itemName').value = card.querySelector('h3').innerText;
+                document.getElementById('quantity').value = card.querySelector('p:nth-of-type(1)').innerText.split(': ')[1];
+                const location = card.querySelector('p:nth-of-type(2)').innerText.split(', ');
+                document.getElementById('address').value = location[0].split(': ')[1];
+                document.getElementById('city').value = location[1];
+
+                // Show the form
+                document.getElementById('form-container').style.display = 'block';
+            });
+        }
+    </script>
+
+</body>
+</html>
+
